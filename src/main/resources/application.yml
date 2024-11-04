@@ -1,14 +1,15 @@
 spring:
+  application:
+    name: asyncweb
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
   r2dbc:
     url: r2dbc:postgresql://localhost:5432/asyncweb
-    username: postgres
+    username: asyncweb
     password: password
-  jpa:
-    hibernate:
-      ddl-auto: update
-  sql:
-    init:
-      mode: always
+
 logging:
   level:
     org.springframework: INFO
