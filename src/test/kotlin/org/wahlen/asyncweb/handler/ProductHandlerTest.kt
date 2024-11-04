@@ -21,10 +21,12 @@ class ProductHandlerTest(@Autowired val webTestClient: WebTestClient) {
 
     @Test
     fun `should return all products`(): Unit = runBlocking {
-        whenever(productRepository.findAll()).thenReturn(flowOf(
-            Product(1, "Product A", 10.0),
-            Product(2, "Product B", 20.0)
-        ))
+        whenever(productRepository.findAll()).thenReturn(
+            flowOf(
+                Product(id = 1, categoryId = 0, name = "Product A", price = 10.0),
+                Product(id = 2, categoryId = 0, name = "Product B", price = 20.0)
+            )
+        )
 
         webTestClient.get().uri("/product")
             .accept(MediaType.APPLICATION_JSON)
@@ -36,7 +38,7 @@ class ProductHandlerTest(@Autowired val webTestClient: WebTestClient) {
 
     @Test
     fun `should return product details by ID`(): Unit = runBlocking {
-        val product = Product(1, "Product A", 10.0)
+        val product = Product(id = 1, categoryId = 0, name = "Product A", price = 10.0)
 
         whenever(productRepository.findById(1)).thenReturn(product)
 
@@ -59,8 +61,8 @@ class ProductHandlerTest(@Autowired val webTestClient: WebTestClient) {
 
     @Test
     fun `should create a new product`(): Unit = runBlocking {
-        val newProduct = Product(name = "Product C", price = 30.0)
-        val savedProduct = Product(3, "Product C", 30.0)
+        val newProduct = Product(name = "Product C", categoryId = 0, price = 30.0)
+        val savedProduct = Product(id = 3, categoryId = 0, name = "Product C", price = 30.0)
 
         whenever(productRepository.save(newProduct)).thenReturn(savedProduct)
 
@@ -75,7 +77,7 @@ class ProductHandlerTest(@Autowired val webTestClient: WebTestClient) {
 
     @Test
     fun `should update an existing product`(): Unit = runBlocking {
-        val updatedProduct = Product(1, "Updated Product", 15.0)
+        val updatedProduct = Product(id = 1, categoryId = 0, name = "Updated Product", price = 15.0)
 
         whenever(productRepository.save(updatedProduct)).thenReturn(updatedProduct)
 
@@ -90,7 +92,7 @@ class ProductHandlerTest(@Autowired val webTestClient: WebTestClient) {
 
     @Test
     fun `should delete a product`(): Unit = runBlocking {
-        doAnswer{}.whenever(productRepository).deleteById(1)
+        doAnswer {}.whenever(productRepository).deleteById(1)
 
         webTestClient.delete().uri("/product/1")
             .exchange()

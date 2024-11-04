@@ -32,6 +32,7 @@ dependencies {
     implementation("io.projectreactor.kotlin:reactor-kotlin-extensions")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
+    implementation("org.springdoc:springdoc-openapi-starter-webflux-ui:2.6.0") // http://localhost:8080/swagger-ui.html
 
     // database
     implementation("org.springframework.boot:spring-boot-starter-data-r2dbc")
