@@ -8,6 +8,8 @@ import org.wahlen.asyncweb.model.Product
 
 interface ProductRepository : CoroutineCrudRepository<Product, Long> {
 
+    suspend fun findByName(name: String): Product?
+
     @Query(
         """SELECT p.id, p.category_id, c.name as category_name, p.name, p.price  
            FROM product p 
