@@ -5,16 +5,16 @@ logging:
     org.springframework.r2dbc: INFO
 
 spring:
-  application:
-    name: asyncweb
   flyway:
     enabled: true
     locations: classpath:db/migration
     baseline-on-migrate: true
-  profiles:
-    active: development
+    url: jdbc:h2:mem:~/testdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
   r2dbc:
-    url: r2dbc:postgresql://localhost:5432/asyncweb
-    username: asyncweb
+    url: r2dbc:h2:mem:///~/testdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
+    username: sa
     password: password
 
+springdoc:
+  api-docs:
+    enabled: false

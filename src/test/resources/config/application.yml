@@ -1,0 +1,2 @@
+# override the default profile for tests
+spring.profiles.active: test
