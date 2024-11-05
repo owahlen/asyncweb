@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.web.bind.annotation.RequestMethod
 import org.springframework.web.reactive.function.server.coRouter
+import org.wahlen.asyncweb.handler.CategoryHandler
 import org.wahlen.asyncweb.handler.ProductHandler
 
 @Configuration
@@ -28,4 +29,23 @@ class RouterConfiguration {
             DELETE("/{id}", productHandler::deleteProduct)
         }
     }
+
+    @Bean
+    @RouterOperations(
+        RouterOperation(path = "/category", method = arrayOf(RequestMethod.GET), beanClass = CategoryHandler::class, beanMethod = "getAllCategories"),
+        RouterOperation(path = "/category/{id}", method = arrayOf(RequestMethod.GET), beanClass = CategoryHandler::class, beanMethod = "getCategoryById"),
+        RouterOperation(path = "/category", method = arrayOf(RequestMethod.POST), beanClass = CategoryHandler::class, beanMethod = "createCategory"),
+        RouterOperation(path = "/category/{id}", method = arrayOf(RequestMethod.PUT), beanClass = CategoryHandler::class, beanMethod = "updateCategory"),
+        RouterOperation(path = "/category/{id}", method = arrayOf(RequestMethod.DELETE), beanClass = CategoryHandler::class, beanMethod = "deleteCategory")
+    )
+    fun categoryRoutes(categoryHandler: CategoryHandler) = coRouter {
+        "/category".nest {
+            GET("", categoryHandler::getAllCategories)
+            GET("/{id}", categoryHandler::getCategoryById)
+            POST("", categoryHandler::createCategory)
+            PUT("/{id}", categoryHandler::updateCategory)
+            DELETE("/{id}", categoryHandler::deleteCategory)
+        }
+    }
+
 }
