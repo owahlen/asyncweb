@@ -9,8 +9,8 @@ data class CategoryUpdateDTO (
     @Schema(description = "The name of the category", example = "books")
     @field:NotBlank
     @field:Size(max=255)
-    val name: String
+    val name: String?
 )
 
 fun CategoryUpdateDTO.toCategory(category: Category) : Category =
-    category.copy(name = name)
+    category.copy(name = name!!)

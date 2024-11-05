@@ -8,18 +8,22 @@ import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.parameters.RequestBody
 import io.swagger.v3.oas.annotations.responses.ApiResponse
+import jakarta.validation.Validator
 import kotlinx.coroutines.flow.Flow
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.server.*
+import org.wahlen.asyncweb.config.checkValid
 import org.wahlen.asyncweb.dto.CategoryCreateDTO
+import org.wahlen.asyncweb.dto.CategoryResponseDTO
 import org.wahlen.asyncweb.dto.CategoryUpdateDTO
 import org.wahlen.asyncweb.model.Category
 import org.wahlen.asyncweb.service.CategoryService
 
 @Component
 class CategoryHandler(
-    private val categoryService: CategoryService
+    private val categoryService: CategoryService,
+    private val validator: Validator
 ) {
 
     @Operation(
@@ -37,7 +41,7 @@ class CategoryHandler(
         ]
     )
     suspend fun getAllCategories(request: ServerRequest): ServerResponse {
-        val categories: Flow<Category> = categoryService.getAllCategories()
+        val categories: Flow<CategoryResponseDTO> = categoryService.getAllCategoryResponseDTOs()
         return ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).bodyAndAwait(categories)
     }
 
@@ -71,7 +75,7 @@ class CategoryHandler(
     )
     suspend fun getCategoryById(request: ServerRequest): ServerResponse {
         val id = request.pathVariable("id").toLongOrNull() ?: throw IllegalArgumentException("Invalid ID")
-        val category = categoryService.getCategoryById(id) // throws NoSuchElementException if not found
+        val category = categoryService.getCategoryResponseDTOById(id) // throws NoSuchElementException if not found
         return ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).bodyValueAndAwait(category)
     }
 
@@ -84,6 +88,12 @@ class CategoryHandler(
                     mediaType = MediaType.APPLICATION_JSON_VALUE,
                     schema = Schema(implementation = Category::class)
                 )]
+            ), ApiResponse(
+                responseCode = "400",
+                description = "Invalid category"
+            ), ApiResponse(
+                responseCode = "409",
+                description = "Category already exists"
             )
         ], requestBody = RequestBody(
             content = [Content(
@@ -94,8 +104,9 @@ class CategoryHandler(
     )
     suspend fun createCategory(request: ServerRequest): ServerResponse {
         val categoryCreateDTO = request.awaitBody<CategoryCreateDTO>()
-        val createdCategory = categoryService.createCategory(categoryCreateDTO)
-        return ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).bodyValueAndAwait(createdCategory)
+        validator.checkValid(categoryCreateDTO)
+        val createdCategoryResponseDTO = categoryService.createCategory(categoryCreateDTO)
+        return ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).bodyValueAndAwait(createdCategoryResponseDTO)
     }
 
     @Operation(
@@ -107,6 +118,15 @@ class CategoryHandler(
                     mediaType = MediaType.APPLICATION_JSON_VALUE,
                     schema = Schema(implementation = Category::class)
                 )]
+            ), ApiResponse(
+                responseCode = "400",
+                description = "Invalid category"
+            ), ApiResponse(
+                responseCode = "404",
+                description = "Category not found"
+            ), ApiResponse(
+                responseCode = "409",
+                description = "Category already exists"
             )
         ], parameters = [
             Parameter(
@@ -126,8 +146,9 @@ class CategoryHandler(
     suspend fun updateCategory(request: ServerRequest): ServerResponse {
         val id = request.pathVariable("id").toLongOrNull() ?: throw IllegalArgumentException("Invalid ID")
         val categoryUpdateDTO = request.awaitBody<CategoryUpdateDTO>()
-        val updatedCategory = categoryService.updateCategory(id, categoryUpdateDTO)
-        return ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).bodyValueAndAwait(updatedCategory)
+        validator.checkValid(categoryUpdateDTO)
+        val updatedCategoryResponseDTO = categoryService.updateCategory(id, categoryUpdateDTO)
+        return ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).bodyValueAndAwait(updatedCategoryResponseDTO)
     }
 
     @Operation(
@@ -135,6 +156,9 @@ class CategoryHandler(
             ApiResponse(
                 responseCode = "204",
                 description = "Category deleted"
+            ), ApiResponse(
+                responseCode = "404",
+                description = "Category not found"
             )
         ], parameters = [
             Parameter(

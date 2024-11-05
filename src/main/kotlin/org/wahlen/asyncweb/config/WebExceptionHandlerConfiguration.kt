@@ -1,6 +1,7 @@
 package org.wahlen.asyncweb.config
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import jakarta.validation.ConstraintViolationException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Bean
@@ -8,6 +9,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.core.annotation.Order
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
+import org.springframework.web.server.ResponseStatusException
 import org.springframework.web.server.ServerWebExchange
 import org.springframework.web.server.WebExceptionHandler
 import reactor.core.publisher.Mono
@@ -21,11 +23,15 @@ class WebExceptionHandlerConfiguration(private val objectMapper: ObjectMapper) {
     @Order(-2)
     fun exceptionHandler() = WebExceptionHandler { exchange: ServerWebExchange, ex: Throwable ->
         when (ex) {
+            is ConstraintViolationException -> {
+                writeResponse(exchange, HttpStatus.BAD_REQUEST, ex.message)
+            }
             is IllegalArgumentException -> {
                 writeResponse(exchange, HttpStatus.BAD_REQUEST, ex.message)
             }
-            is NoSuchElementException -> {
-                writeResponse(exchange, HttpStatus.NOT_FOUND, ex.message)
+            is ResponseStatusException -> {
+                val httpStatus = HttpStatus.valueOf(ex.statusCode.value())
+                writeResponse(exchange, httpStatus, ex.reason)
             }
 
             else -> {

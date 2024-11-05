@@ -1,5 +1,6 @@
 package org.wahlen.asyncweb.handler
 
+import org.wahlen.asyncweb.dto.CategoryResponseDTO
 import org.wahlen.asyncweb.model.Category
 import org.wahlen.asyncweb.repository.CategoryRepository
 import kotlinx.coroutines.flow.flowOf
@@ -32,8 +33,12 @@ class CategoryHandlerTest(@Autowired val webTestClient: WebTestClient) {
             .accept(MediaType.APPLICATION_JSON)
             .exchange()
             .expectStatus().isOk
-            .expectBodyList(Category::class.java)
+            .expectBodyList(CategoryResponseDTO::class.java)
             .hasSize(2)
+            .contains(
+                CategoryResponseDTO(id = 1, name = "Category A"),
+                CategoryResponseDTO(id = 2, name = "Category B")
+            )
     }
 
     @Test
@@ -46,8 +51,8 @@ class CategoryHandlerTest(@Autowired val webTestClient: WebTestClient) {
             .accept(MediaType.APPLICATION_JSON)
             .exchange()
             .expectStatus().isOk
-            .expectBody(Category::class.java)
-            .isEqualTo(category)
+            .expectBody(CategoryResponseDTO::class.java)
+            .isEqualTo(CategoryResponseDTO(id = 1, name = "Category A"))
     }
 
     @Test
@@ -71,14 +76,16 @@ class CategoryHandlerTest(@Autowired val webTestClient: WebTestClient) {
             .bodyValue(newCategory)
             .exchange()
             .expectStatus().isOk
-            .expectBody(Category::class.java)
-            .isEqualTo(savedCategory)
+            .expectBody(CategoryResponseDTO::class.java)
+            .isEqualTo(CategoryResponseDTO(id = 3, name = "Category C"))
     }
 
     @Test
     fun `should update an existing category`(): Unit = runBlocking {
+        val category = Category(id = 1, name = "Category A")
         val updatedCategory = Category(id = 1, name = "Updated Category")
 
+        whenever(categoryRepository.findById(1)).thenReturn(category)
         whenever(categoryRepository.save(updatedCategory)).thenReturn(updatedCategory)
 
         webTestClient.put().uri("/category/1")
@@ -86,12 +93,14 @@ class CategoryHandlerTest(@Autowired val webTestClient: WebTestClient) {
             .bodyValue(updatedCategory)
             .exchange()
             .expectStatus().isOk
-            .expectBody(Category::class.java)
-            .isEqualTo(updatedCategory)
+            .expectBody(CategoryResponseDTO::class.java)
+            .isEqualTo(CategoryResponseDTO(id = 1, name = "Updated Category"))
     }
 
     @Test
     fun `should delete a category`(): Unit = runBlocking {
+        val category = Category(id = 1, name = "Category A")
+        whenever(categoryRepository.findById(1)).thenReturn(category)
         doAnswer {}.whenever(categoryRepository).deleteById(1)
 
         webTestClient.delete().uri("/category/1")

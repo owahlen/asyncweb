@@ -1,42 +1,54 @@
 package org.wahlen.asyncweb.service
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.wahlen.asyncweb.dto.CategoryCreateDTO
-import org.wahlen.asyncweb.dto.CategoryUpdateDTO
-import org.wahlen.asyncweb.dto.toCategory
+import org.springframework.web.server.ResponseStatusException
+import org.wahlen.asyncweb.dto.*
 import org.wahlen.asyncweb.model.Category
 import org.wahlen.asyncweb.repository.CategoryRepository
 
 @Service
 class CategoryService(private val categoryRepository: CategoryRepository) {
 
-    @Transactional
-    suspend fun createCategory(categoryCreateDTO: CategoryCreateDTO): Category {
-        val category = categoryCreateDTO.toCategory()
-        return categoryRepository.save(category)
+    fun getAllCategoryResponseDTOs(): Flow<CategoryResponseDTO> {
+        return categoryRepository.findAll().map { it.toCategoryResponseDTO() }
+    }
+
+    suspend fun getCategoryResponseDTOById(id: Long): CategoryResponseDTO {
+        return getCategoryById(id).toCategoryResponseDTO()
     }
 
     suspend fun getCategoryById(id: Long): Category {
-        return categoryRepository.findById(id) ?: throw NoSuchElementException("Category $id not found")
-    }
-
-    fun getAllCategories(): Flow<Category> {
-        return categoryRepository.findAll()
+        return categoryRepository.findById(id)
+            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Category with id $id not found")
     }
 
     @Transactional
-    suspend fun updateCategory(id:Long, categoryUpdateDTO: CategoryUpdateDTO): Category {
-        // Custom logic for updating a category can be added here
-        val category = categoryRepository.findById(id) ?: throw NoSuchElementException("Category $id not found")
+    suspend fun createCategory(categoryCreateDTO: CategoryCreateDTO): CategoryResponseDTO {
+        val category = categoryCreateDTO.toCategory()
+        categoryRepository.findByName(category.name)?.let {
+            throw ResponseStatusException(HttpStatus.CONFLICT, "Category '${category.name}' already exists")
+        }
+        return categoryRepository.save(category).toCategoryResponseDTO()
+    }
+
+
+    @Transactional
+    suspend fun updateCategory(id: Long, categoryUpdateDTO: CategoryUpdateDTO): CategoryResponseDTO {
+        val category = getCategoryById(id)
         val updatedCategory = categoryUpdateDTO.toCategory(category)
-        return categoryRepository.save(updatedCategory)
+        categoryRepository.findByName(updatedCategory.name)?.takeIf { it.id != updatedCategory.id }?.let {
+            throw ResponseStatusException(HttpStatus.CONFLICT, "Category '${updatedCategory.name}' already exists")
+        }
+        return categoryRepository.save(updatedCategory).toCategoryResponseDTO()
     }
 
     @Transactional
     suspend fun deleteCategoryById(id: Long) {
-        categoryRepository.findById(id) ?: throw NoSuchElementException("Category $id not found")
+        getCategoryById(id)
         categoryRepository.deleteById(id)
     }
 }

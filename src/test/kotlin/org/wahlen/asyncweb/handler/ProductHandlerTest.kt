@@ -1,5 +1,6 @@
 package org.wahlen.asyncweb.handler
 
+import org.wahlen.asyncweb.dto.ProductResponseDTO
 import org.wahlen.asyncweb.model.Product
 import org.wahlen.asyncweb.repository.ProductRepository
 import kotlinx.coroutines.flow.flowOf
@@ -12,19 +13,24 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.WebTestClient
+import org.wahlen.asyncweb.model.Category
+import org.wahlen.asyncweb.repository.CategoryRepository
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class ProductHandlerTest(@Autowired val webTestClient: WebTestClient) {
+
+    @MockBean
+    private lateinit var categoryRepository: CategoryRepository
 
     @MockBean
     private lateinit var productRepository: ProductRepository
 
     @Test
     fun `should return all products`(): Unit = runBlocking {
-        whenever(productRepository.findAll()).thenReturn(
+        whenever(productRepository.findAllProductResponseDTOs()).thenReturn(
             flowOf(
-                Product(id = 1, categoryId = 0, name = "Product A", price = 10.0),
-                Product(id = 2, categoryId = 0, name = "Product B", price = 20.0)
+                ProductResponseDTO(id = 1, categoryId = 1, categoryName = "books", name = "Product A", price = 10.0),
+                ProductResponseDTO(id = 2, categoryId = 1, categoryName = "books", name = "Product B", price = 20.0)
             )
         )
 
@@ -32,22 +38,28 @@ class ProductHandlerTest(@Autowired val webTestClient: WebTestClient) {
             .accept(MediaType.APPLICATION_JSON)
             .exchange()
             .expectStatus().isOk
-            .expectBodyList(Product::class.java)
+            .expectBodyList(ProductResponseDTO::class.java)
             .hasSize(2)
+            .contains(
+                ProductResponseDTO(id = 1, categoryId = 1, categoryName = "books", name = "Product A", price = 10.0),
+                ProductResponseDTO(id = 2, categoryId = 1, categoryName = "books", name = "Product B", price = 20.0)
+            )
     }
 
     @Test
     fun `should return product details by ID`(): Unit = runBlocking {
-        val product = Product(id = 1, categoryId = 0, name = "Product A", price = 10.0)
+        val product = Product(id = 1, categoryId = 1, name = "Product A", price = 10.0)
+        val category = Category(id = 1, name = "books")
 
         whenever(productRepository.findById(1)).thenReturn(product)
+        whenever(categoryRepository.findById(1)).thenReturn(category)
 
         webTestClient.get().uri("/product/1")
             .accept(MediaType.APPLICATION_JSON)
             .exchange()
             .expectStatus().isOk
-            .expectBody(Product::class.java)
-            .isEqualTo(product)
+            .expectBody(ProductResponseDTO::class.java)
+            .isEqualTo(ProductResponseDTO(id = 1, categoryId = 1, categoryName = "books", name = "Product A", price = 10.0))
     }
 
     @Test
@@ -61,24 +73,30 @@ class ProductHandlerTest(@Autowired val webTestClient: WebTestClient) {
 
     @Test
     fun `should create a new product`(): Unit = runBlocking {
-        val newProduct = Product(name = "Product C", categoryId = 0, price = 30.0)
-        val savedProduct = Product(id = 3, categoryId = 0, name = "Product C", price = 30.0)
+        val newProduct = Product(name = "Product C", categoryId = 1, price = 30.0)
+        val savedProduct = Product(id = 3, categoryId = 1, name = "Product C", price = 30.0)
+        val category = Category(id = 1, name = "books")
 
         whenever(productRepository.save(newProduct)).thenReturn(savedProduct)
+        whenever(categoryRepository.findById(1)).thenReturn(category)
 
         webTestClient.post().uri("/product")
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(newProduct)
             .exchange()
             .expectStatus().isOk
-            .expectBody(Product::class.java)
-            .isEqualTo(savedProduct)
+            .expectBody(ProductResponseDTO::class.java)
+            .isEqualTo(ProductResponseDTO(id = 3, categoryId = 1, categoryName = "books", name = "Product C", price = 30.0))
     }
 
     @Test
     fun `should update an existing product`(): Unit = runBlocking {
-        val updatedProduct = Product(id = 1, categoryId = 0, name = "Updated Product", price = 15.0)
+        val product = Product(id = 1, categoryId = 1, name = "Product A", price = 10.0)
+        val updatedProduct = Product(id = 1, categoryId = 1, name = "Updated Product", price = 15.0)
+        val category = Category(id = 1, name = "books")
 
+        whenever(productRepository.findById(1)).thenReturn(product)
+        whenever(categoryRepository.findById(1)).thenReturn(category)
         whenever(productRepository.save(updatedProduct)).thenReturn(updatedProduct)
 
         webTestClient.put().uri("/product/1")
@@ -86,12 +104,14 @@ class ProductHandlerTest(@Autowired val webTestClient: WebTestClient) {
             .bodyValue(updatedProduct)
             .exchange()
             .expectStatus().isOk
-            .expectBody(Product::class.java)
-            .isEqualTo(updatedProduct)
+            .expectBody(ProductResponseDTO::class.java)
+            .isEqualTo(ProductResponseDTO(id = 1, categoryId = 1, categoryName = "books", name = "Updated Product", price = 15.0))
     }
 
     @Test
     fun `should delete a product`(): Unit = runBlocking {
+        val product = Product(id = 1, categoryId = 0, name = "Product A", price = 10.0)
+        whenever(productRepository.findById(1)).thenReturn(product)
         doAnswer {}.whenever(productRepository).deleteById(1)
 
         webTestClient.delete().uri("/product/1")
