@@ -25,6 +25,13 @@ repositories {
     mavenCentral()
 }
 
+// the "webResources" configuration is resolved to the "webapp" configuration in the webapp project
+// https://docs.gradle.org/current/userguide/cross_project_publications.html
+val webResources by configurations.creating {
+    isCanBeConsumed = false
+    isCanBeResolved = true
+}
+
 dependencies {
     // api
     implementation("org.springframework.boot:spring-boot-starter-webflux")
@@ -49,14 +56,24 @@ dependencies {
     testImplementation("org.mockito.kotlin:mockito-kotlin:5.4.0")
     testRuntimeOnly("io.r2dbc:r2dbc-h2")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+//    webResources(
+//        // dependency to the webapp configuration in the webapp project
+//        project(
+//            mapOf(
+//                "path" to ":webapp",
+//                "configuration" to "webapp"
+//            )
+//        )
+//    )
+
 }
 
-val dbHost = findProperty("db.host")?: "localhost"
-val dbPort = findProperty("db.port")?: "5432"
-val dbName = findProperty("db.name")?: "asyncweb"
-val dbSchema = findProperty("db.schema")?: "public"
-val dbUser = findProperty("db.user")?: "asyncweb"
-val dbPassword = findProperty("db.password")?: "password"
+val dbHost = findProperty("db.host") ?: "localhost"
+val dbPort = findProperty("db.port") ?: "5432"
+val dbName = findProperty("db.name") ?: "asyncweb"
+val dbSchema = findProperty("db.schema") ?: "public"
+val dbUser = findProperty("db.user") ?: "asyncweb"
+val dbPassword = findProperty("db.password") ?: "password"
 
 flyway {
     url = "jdbc:postgresql://${dbHost}:${dbPort}/${dbName}"
@@ -78,3 +95,11 @@ tasks.withType<Test> {
     jvmArgs("-XX:+EnableDynamicAgentLoading")
 }
 
+//tasks.processResources {
+//    dependsOn(":webapp:yarn_build")
+//    copy {
+//        from(webResources)
+//        // spring boot serves static html from the "/public" folder
+//        into(layout.buildDirectory.dir("resources/main/public"))
+//    }
+//}
