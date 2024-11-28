@@ -1,14 +1,14 @@
 plugins {
-    kotlin("jvm") version "1.9.25"
-    kotlin("plugin.spring") version "1.9.25"
-    id("org.springframework.boot") version "3.3.5"
+    kotlin("jvm") version "2.1.0"
+    kotlin("plugin.spring") version "2.1.0"
+    id("org.springframework.boot") version "3.4.0"
     id("io.spring.dependency-management") version "1.1.6"
-    id("org.flywaydb.flyway") version "10.20.1"
+    id("org.flywaydb.flyway") version "11.0.0"
 }
 
 buildscript {
     dependencies {
-        classpath("org.flywaydb:flyway-database-postgresql:10.20.1")
+        classpath("org.flywaydb:flyway-database-postgresql:11.0.0")
     }
 }
 
@@ -40,12 +40,12 @@ dependencies {
     implementation("io.projectreactor.kotlin:reactor-kotlin-extensions")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
-    implementation("org.springdoc:springdoc-openapi-starter-webflux-ui:2.6.0") // http://localhost:8080/swagger-ui.html
+    implementation("org.springdoc:springdoc-openapi-starter-webflux-ui:2.7.0") // http://localhost:8080/swagger-ui.html
 
     // database
     implementation("org.springframework.boot:spring-boot-starter-data-r2dbc")
     implementation("org.flywaydb:flyway-core")
-    runtimeOnly("org.flywaydb:flyway-database-postgresql:10.20.1")
+    runtimeOnly("org.flywaydb:flyway-database-postgresql:11.0.0")
     runtimeOnly("org.postgresql:r2dbc-postgresql")
     runtimeOnly("org.postgresql:postgresql") // for flyway migrations
 
